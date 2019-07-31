@@ -1,0 +1,9 @@
+<Files cfg.php>
+order allow,deny
+deny from all
+</Files>
+
+<Files ses.php>
+order allow,deny
+deny from all
+</Files>
