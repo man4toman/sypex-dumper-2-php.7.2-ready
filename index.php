@@ -31,7 +31,7 @@ class Sypex_Dumper {
 		define('TIMER', array_sum(explode(' ', microtime()))); 
 		define('V_SXD', 20010);
 		define('V_PHP', sxd_ver2int(phpversion()));
-		$this->name = 'Sypex Dumper 2.0.10 (mysqli)';
+		$this->name = 'Sypex Dumper 2.0.10 (mysqli, PHP 8.0 compatible)';
 	}
 	function loadLang($lng_name = 'auto'){
 		if($lng_name == 'auto'){
@@ -54,7 +54,7 @@ class Sypex_Dumper {
 		return true;
 	}
 	function init($args = false){
-		if (get_magic_quotes_gpc()) {
+		if (version_compare(phpversion(), '5.4', '<') && get_magic_quotes_gpc()) {
 			$_POST = sxd_antimagic($_POST);
 		}
 		include('cfg.php');
@@ -181,7 +181,7 @@ class Sypex_Dumper {
 			$this->CFG['my_user'] = $user;
 			$this->CFG['my_pass'] = $pass;
 		}
-		if($this->mysqli = mysqli_connect($this->CFG['my_host'] . ($this->CFG['my_host']{0} != ':' ? ":{$this->CFG['my_port']}" : ''),  $this->CFG['my_user'], $this->CFG['my_pass'], '')) {
+		if($this->mysqli = mysqli_connect($this->CFG['my_host'] . ($this->CFG['my_host'][0] != ':' ? ":{$this->CFG['my_port']}" : ''),  $this->CFG['my_user'], $this->CFG['my_pass'], '')) {
 			/*
 			if(V_PHP > 50202) mysql_set_charset('utf8') or sxd_my_error();
 			else mysql_query('SET NAMES utf8') or sxd_my_error();
@@ -452,7 +452,9 @@ class Sypex_Dumper {
 		header("SXD: {$this->name}");
 		header("Connection: close"); 
 		header("Content-Length: 0"); 
-		@ob_end_flush(); 
+		while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
 		@flush();
 	}
 	function resumeJob($job){
@@ -614,7 +616,7 @@ class Sypex_Dumper {
 				}
 				clearstatcache(); 
 			}
-			switch($q{0}){
+			switch($q[0]){
 				case '(':
 					if($continue) {
 						$this->addLog(sprintf("{$this->LNG['restore_TC']} {$this->LNG['continue_from']}", $this->rtl[5], $this->rtl[3]));
@@ -796,7 +798,7 @@ class Sypex_Dumper {
 			}
 			do {
 				$repeat = false;
-				switch($q{0}){
+				switch($q[0]){
 					case '(':
 						if($continue) {
 							$this->addLog(sprintf("{$this->LNG['restore_TC']} {$this->LNG['continue_from']}", $this->rtl[5], $this->rtl[3]));
@@ -834,7 +836,7 @@ class Sypex_Dumper {
 							}
 						}
 						break;
-					case '-' && $q{1} == '-':
+					case '-' && $q[1] == '-':
 					case '#':
 						$repeat = true;
 						$q = ltrim(substr($q, strpos($q, $this->JOB['eol'])));
@@ -1514,7 +1516,7 @@ function sxd_read_sql($f, &$seek, $ei, $delimiter = "\t;", $eol = "\n"){
 		}
 		if($ei) {
 			$pos = strrpos($l, $eol);
-			if($pos > 0 && $l{$pos-1} === ',') {
+			if($pos > 0 && $l[$pos-1] === ',') {
 				// Окончание не найдено
 				$q = substr($l, 0, $pos-1);
 				$l = substr($l, $pos+ strlen($eol));
@@ -1551,7 +1553,7 @@ function sxd_php2json($obj){
 function sxd_ver2int($ver){
 	return preg_match("/^(\d+)\.(\d+)\.(\d+)/", $ver, $m) ? sprintf("%d%02d%02d", $m[1], $m[2], $m[3]) : 0;
 }
-function sxd_error_handler($errno, $errmsg, $filename, $linenum, $vars){
+function sxd_error_handler($errno, $errmsg, $filename, $linenum){
     global $SXD;
     if($SXD->try) return;
 	if($errno == 8192) return;
